@@ -17,22 +17,24 @@ FROM df
 INNER JOIN School_List ON df.EIN = School_List.EIN
 '''
 
-Master_df = pd.DataFrame()
+Master_df_list = []
+sheets = []
 
 # Iterate over the files in the folder
 for filename in os.listdir(folder_path):
     print("File Printing")
     if filename.endswith('.xlsx'):  # Checks for Excel files (can also use '.xls' for older Excel files)
+        sheets.append(filename[:14])
         t1 = datetime.now()
         file_path = os.path.join(folder_path, filename)
         df = pd.read_excel(file_path)
         t2 = datetime.now()
-        time = t2-t1
         qry_df = ddb.sql(qry).df()
-        Master_df = pd.concat([Master_df,qry_df], ignore_index=True)
+        Master_df_list.append(qry_df)
+        # Master_df = pd.concat([Master_df,qry_df], ignore_index=True)
+        time = t2-t1
         print(int(time.total_seconds()))
-    
 
-
-with pd.ExcelWriter('Qryed_SchoolData.xlsx') as writer:
-    Master_df.to_excel(writer, sheet_name='Sheet1', index=True)
+with pd.ExcelWriter('Qryed_SchoolData2.xlsx') as writer:
+    for sheetname, Mdf in zip(sheets,Master_df_list):
+        Mdf.to_excel(writer, sheet_name=sheetname, index=True)
